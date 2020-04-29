@@ -113,7 +113,7 @@ let commaSprinkler input =
                                            |false -> match t.IsEmpty with
                                                      |true -> "List Empty" 
                                                      |false -> ``Find preceeding word to sprinkle`` pword t templist element
-            | _ -> failwith "examine match case this should not be reachable"
+            | _ -> failwith "examine match case, this should not be reachable"
 
     let rec runit nocommaword commaword inputlist emptylist foundwords =
         let newlist = addcomma nocommaword commaword inputlist []
@@ -137,7 +137,49 @@ let commaSprinkler input =
    
 
 let rivers input =
-    failwith "Not implemented"
+    let wordarray = input.ToString().Split(' ')
+    let wordlist = Seq.toList wordarray
+
+    let onlyLetters (list:string) = 
+        let charlist = Seq.toList list
+        let rec checkCase (clist:char list) = 
+            match clist with 
+            |h::t -> match h|>int >=97 && h|>int <= 122 || h = ' ' || h|>int >=65 && h|>int <= 90 with 
+                        |true -> checkCase t
+                        |false -> None
+            |[]-> Some true
+        checkCase charlist
+    
+    let singleSpace (list:string list) = 
+        match (List.contains("") list) with 
+        | true -> None 
+        | _ -> Some true
+
+    let rec longestWord length (list:string list) =
+        match list with 
+        |h::t -> match h.Length > length with
+                 | true -> match h.Length >80 with
+                           |false -> longestWord h.Length t
+                           |_-> None
+                 | _-> longestWord length t
+        |[] -> Some length
+
+    let twoWords (list:string list)= 
+       match List.length list >=2 with
+       |true -> Some true
+       |false -> None
+
+    let validation = 
+        match onlyLetters input with
+        |Some true -> match singleSpace wordlist with
+                      | Some true -> match longestWord 0 wordlist with
+                                     | None  -> None
+                                     | _ -> match twoWords wordlist with
+                                            | Some true -> Some true
+                                            | _ -> None
+                      |_-> None
+        |_-> None
+    validation
 
 [<EntryPoint>]
 let main argv =
