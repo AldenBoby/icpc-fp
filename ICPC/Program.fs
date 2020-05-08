@@ -139,6 +139,7 @@ let commaSprinkler input =
 let rivers input =
     let wordarray = input.ToString().Split(' ')
     let wordlist = Seq.toList wordarray
+    let listi = Seq.toList (input)
 
     let onlyLetters (list:string) = 
         let charlist = Seq.toList list
@@ -179,9 +180,61 @@ let rivers input =
                                             | _ -> None
                       |_-> None
         |_-> None
-    validation
+    
+    let findLargest x = 
+        List.fold (fun accumulator x -> match x > accumulator with |true -> x |_ -> accumulator) 0
+    
+    let rec realsplit (list:string list) (newlist:string list) biglist length =
+        let og = 21
+        match list with
+        | [] -> let hello = String.concat " " (List.rev newlist)
+                let biglist = hello::biglist(*List.iter (printfn "%s")*) 
+                List.iter (printfn "%s") (List.rev biglist)
+                (List.rev biglist)
+        | h::t -> match h.Length <= length  with
+                  | true -> let newlist = h::newlist
+                            realsplit t newlist biglist ((length - h.Length)-1)
+                  | false -> let hello = String.concat " " (List.rev newlist)
+                             let biglist = hello::biglist
+                             realsplit list [] biglist og
+
+    let rec comparespace (list:string list) rivercount (startIndex:int) fullList (rivercountlist:int list) =
+        match list with 
+        | [] -> rivercountlist |> List.fold (fun accumulator x -> match x > accumulator with |true -> x |_ -> accumulator) 0
+        | h::t -> match h.IndexOf(' ',startIndex) with 
+                  | -1 -> comparespace t 0 0 t rivercountlist
+                  | _ -> let targetIndex = h.IndexOf(' ',startIndex)
+                         let targetIndexplus =  targetIndex+1
+                         let targetIndexminus = targetIndex-1
+                         match t.IsEmpty with
+                         |true -> match rivercount with
+                                  | 0 ->  1::rivercountlist |> List.fold (fun accumulator x -> match x > accumulator with |true -> x |_ -> accumulator) 0
+                                  | _ ->  rivercountlist |> List.fold (fun accumulator x -> match x > accumulator with |true -> x |_ -> accumulator) 0
+                         |false -> 
+                                   let checki = t.Head //
+                                   match checki.Length> targetIndex+1 with
+                                   | false ->let rivercountlist = (rivercount+1)::rivercountlist
+                                             comparespace t 0 0 t rivercountlist
+                                   | true -> match checki.[targetIndex] = ' ' || checki.[targetIndexplus] = ' ' || checki.[targetIndexminus] = ' ' with
+                                             |true -> match checki.[targetIndex] = ' ' with
+                                                        | true -> comparespace t (rivercount+1) targetIndex fullList rivercountlist
+                                                        | false ->  match checki.[targetIndexplus] = ' ' with
+                                                                    |true ->  comparespace t (rivercount+1) targetIndexplus fullList rivercountlist
+                                                                    | false -> comparespace t (rivercount+1) targetIndexminus fullList rivercountlist
+                                             |false ->let rivercountlist = (rivercount+1)::rivercountlist
+                                                      comparespace fullList 0 (targetIndex+1) fullList rivercountlist
+    
+    
+    let fully = (realsplit wordlist [] [] 21)
+    comparespace fully 0 0 fully []
+
+    //validation
 
 [<EntryPoint>]
 let main argv =
-    printfn "Hello World from F#!"
+    //printfn "Hello World from F#!"
+    //printfn "%d" (rivers "The Yangtze is the third longest river in Asia and the longest in the world to flow entirely in one country")
+    printfn "%d" (rivers "When two or more rivers meet at a confluence other than the sea the resulting merged river takes the name of one of those rivers")
+    //printfn "%d" (rivers "hello world")
+    Console.ReadKey()
     0 // return an integer exit code
