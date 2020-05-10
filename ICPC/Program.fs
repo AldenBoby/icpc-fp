@@ -2,11 +2,11 @@
 open System
 
 let commaSprinkler input =
-    let senlist = input.ToString().Split(' ')
-    let inputlist = Seq.toList senlist
+    let senlist = input.ToString().Split(' ') //get array of words from input excluding spaces
+    let inputlist = Seq.toList senlist // turn array into list
     let firstelement = false  
     
-    let allowedChars (string:string) = 
+    let allowedChars (string:string) = // make sure input contains the correct chars using ASCII values
         let charlist = (Seq.toList (string))
         let rec checkChar (charlist:char list) = 
             match charlist with
@@ -16,7 +16,7 @@ let commaSprinkler input =
             |[] -> Some true
         checkChar charlist
     
-    let rec twoChars (input:string list) =
+    let rec twoChars (input:string list) = // make sure that each word is at least two chars
         match input with 
         |h::t -> match h.Length >=2 with
                  |true -> match allowedChars h with 
@@ -25,18 +25,18 @@ let commaSprinkler input =
                  |false -> None
         |[] -> Some true
 
-    let lastStop (input:string list) =
+    let lastStop (input:string list) = // make sure the end of a string is a full stop
         let lastWord = List.last input
         match lastWord.EndsWith(".") with 
         | true -> Some true
         | false -> None 
     
-    let firstWord (input:string list) = 
+    let firstWord (input:string list) = // make sure the string starts with a word 
         match input.Head = "," || input.Head = "." || input.Head = "" with
         | true -> None
         | false -> Some false
     
-    let rec inBetween (input:string list) = 
+    let rec inBetween (input:string list) = // make sure only spaces are between words
         match input with
         | h::t -> match h = "" || h = "." || h = "," || h.Contains("..") || h.Contains(",") && not (h.EndsWith(",")) with
                   | true -> None 
@@ -72,11 +72,11 @@ let commaSprinkler input =
                               commaword
                     | false -> finder t
   
-    let rec addcomma (nocomma:string) (comma:string) wordlist newlist = 
+    let rec addcomma (nocomma:string) (comma:string) wordlist newlist = // add a comma to all instances of the target word
             match wordlist with 
             | [] -> List.rev newlist
             | h::t -> let replacee = h.ToString()
-                      match (replacee.Contains(".") || replacee.Contains(",")) with
+                      match (replacee.Contains(".") || replacee.Contains(",")) with // if that instance already has a comma or full stop skip it
                       | true -> let newlist = h::newlist
                                 addcomma nocomma comma t newlist
                       | false -> match h = replacee with 
@@ -85,7 +85,7 @@ let commaSprinkler input =
                                  | false -> let newlist = h::newlist
                                             addcomma nocomma comma t newlist
 
-    let rec precomma wordlist (templist:string list) foundwords =
+    let rec precomma wordlist (templist:string list) foundwords = // find a word that has a comma before it
             match wordlist with
             | h::t -> match h.ToString().Contains(",") with
                       | true -> let precword = templist.Head.Trim('.')
@@ -97,7 +97,7 @@ let commaSprinkler input =
                                  precomma t templist foundwords        
             | [] -> "List done" // no preceeding coma 
 
-    let rec ``Find preceeding word to sprinkle`` pword wordlist (templist:string list) element  = 
+    let rec ``Find preceeding word to sprinkle`` pword wordlist (templist:string list) element  = // find a word to add a comma to, using the word found to have a comma preceeding it
             match wordlist with 
             | h::t ->  match element with
                        | false -> let templist = h::templist
@@ -120,7 +120,7 @@ let commaSprinkler input =
         let pword = precomma (List.rev newlist) [] foundwords
         match pword with 
         |"List done" -> Some (String.concat " " (newlist))
-        |_-> let foundwords = pword::foundwords
+        |_-> let foundwords = pword::foundwords // add resulting word to a list of found words so it isnt checked again
              let preceedingword = ``Find preceeding word to sprinkle`` pword (List.rev newlist) [] firstelement
              match preceedingword with
              | "List Empty" -> Some (String.concat " " (newlist))
@@ -128,37 +128,34 @@ let commaSprinkler input =
                     runit preceedingword preceedingwordcomma newlist [] foundwords
     
     let foundwords = []
-    let commaword = finder inputlist
+    let commaword = finder inputlist // find a word with a comma 
     let nocommaword = stripcomma commaword
 
     match inputValidation with 
     |Some true ->  runit nocommaword commaword inputlist [] foundwords
     |_ -> None
    
-
 let rivers input =
-    let wordarray = input.ToString().Split(' ')
-    let wordlist = Seq.toList wordarray
-    let listi = Seq.toList (input)
-    let backwards = false
+    let wordarray = input.ToString().Split(' ') // split the string into words
+    let wordlist = Seq.toList wordarray // convert array to list 
 
-    let onlyLetters (list:string) = 
+    let onlyLetters (list:string) = // check if the input contains only the desired characters
         let charlist = Seq.toList list
         let rec checkCase (clist:char list) = 
             match clist with 
-            |h::t -> match h|>int >=97 && h|>int <= 122 || h = ' ' || h|>int >=65 && h|>int <= 90 with 
+            |h::t -> match h|>int >=97 && h|>int <= 122 || h = ' ' || h|>int >=65 && h|>int <= 90 with // validation is done by checking ASCII values 
                         |true -> checkCase t
                         |false -> None
             |[]-> Some true
         checkCase charlist
     
-    let singleSpace (list:string list) = 
+    let singleSpace (list:string list) = // check if input has a double space 
         match (List.contains("") list) with 
         | true -> None 
         | _ -> Some true
 
-    let rec longestWord length (list:string list) =
-        match list with 
+    let rec longestWord length (list:string list) = // find the longest word in the sentence - used as the minimum line length
+        match list with // could be done with a fold
         |h::t -> match h.Length > length with
                  | true -> match h.Length >80 with
                            |false -> longestWord h.Length t
@@ -166,12 +163,12 @@ let rivers input =
                  | _-> longestWord length t
         |[] -> Some length
 
-    let twoWords (list:string list)= 
+    let twoWords (list:string list)= // make sure there are at least two words in a sentence
        match List.length list >=2 with
        |true -> Some true
        |false -> None
 
-    let validation = 
+    let validation = // put all the validation methids into one
         match onlyLetters input with
         |Some true -> match singleSpace wordlist with
                       | Some true -> match longestWord 0 wordlist with
@@ -182,74 +179,71 @@ let rivers input =
                       |_-> None
         |_-> None
     
-    let findLargest accumulator x = 
+    let findLargest accumulator x = //find the largest value in a list
         match x > accumulator with 
         |true -> x 
         |_ -> accumulator
     
-    let maxim malum valum = 
+    let maxim malum valum = // finds the largest value in a tuple with an arity of 2 using the second value
         match malum with 
                   |(b,a) -> match valum with
                             | (d,c) -> match c>a with
                                        |true -> (d,c)
                                        |false -> (b,a)
     
-    let rec realsplit (list:string list) (newlist:string list) biglist length ogLength =
-        let og = ogLength
+    let rec realsplit (list:string list) (newlist:string list) biglist length ogLength = // splits a sentence into a list of strings with the specified line width
         match list with
-        | [] -> let hello = String.concat " " (List.rev newlist)
-                let biglist = hello::biglist(*List.iter (printfn "%s")*) 
-                List.iter (printfn "%s") (List.rev biglist)
-                (List.rev biglist)
-        | h::t -> match h.Length <= length  with
-                  | true -> let newlist = h::newlist
-                            realsplit t newlist biglist ((length - h.Length)-1) og
-                  | false -> let hello = String.concat " " (List.rev newlist)
-                             let biglist = hello::biglist
-                             realsplit list [] biglist og og
+        | [] -> let correctWidth = String.concat " " (List.rev newlist)
+                let biglist = correctWidth::biglist
+                List.rev biglist // biglist contains is a list of strings with equal char length
+        | h::t -> match h.Length <= length  with // check if word can fit line width
+                  | true -> let newlist = h::newlist 
+                            realsplit t newlist biglist ((length - h.Length)-1) ogLength // -1 to account for space character
+                  | false -> let correctWidth = String.concat " " (List.rev newlist)
+                             let biglist = correctWidth::biglist // add new string to list of strings
+                             realsplit list [] biglist ogLength ogLength // evaluate remaining words
 
-    let rec comparespace (list:string list) rivercount (startIndex:int) fullList (rivercountlist:int list) backwards=
+    let rec comparespace (list:string list) rivercount (startIndex:int) fullList (rivercountlist:int list) backwards= // finds the largest river given the length of a list
         match list with 
-        | [] -> rivercountlist |> List.fold findLargest 0
+        | [] -> rivercountlist |> List.fold findLargest 0 //return largest value in the list
         | h::t -> match h.IndexOf(' ',startIndex) with 
-                  | -1 -> comparespace t 0 0 t rivercountlist backwards
+                  | -1 -> comparespace t 0 0 t rivercountlist backwards // no space found in string from given index, remove head from fulllist
                   | _ -> let targetIndex = h.IndexOf(' ',startIndex)
                          let targetIndexplus =  targetIndex+1
                          let targetIndexminus = targetIndex-1
-                         match t.IsEmpty with
+                         match t.IsEmpty with // if the tail is empty return the value immeadiatly
                          |true -> match rivercount with
-                                  | 0 ->  1::rivercountlist |> List.fold findLargest 0
+                                  | 0 ->  1::rivercountlist |> List.fold findLargest 0 // represents one line
                                   | _ ->  rivercountlist |> List.fold findLargest 0
                          |false -> 
-                                   let checki = t.Head //
-                                   match checki.Length> targetIndex+1 with
+                                   let checki = t.Head 
+                                   match checki.Length> targetIndex+1 with // check if bottom line is within range of the target index 
                                    | false ->let rivercountlist = (rivercount+1)::rivercountlist
                                              comparespace t 0 0 t rivercountlist backwards
-                                   | true -> match checki.[targetIndex] = ' ' || checki.[targetIndexplus] = ' ' || checki.[targetIndexminus] = ' ' with
+                                   | true -> match checki.[targetIndex] = ' ' || checki.[targetIndexplus] = ' ' || checki.[targetIndexminus] = ' ' with // check if the sentence underneath has a space in the same position or next to the position
                                              |true -> match checki.[targetIndex] = ' ' with
-                                                        | true ->   comparespace t (rivercount+1) targetIndex fullList rivercountlist backwards
+                                                        | true ->   comparespace t (rivercount+1) targetIndex fullList rivercountlist backwards // space in the same place
                                                         | false ->  match checki.[targetIndexplus] = ' ' with
-                                                                    |true -> comparespace t (rivercount+1) targetIndexplus fullList rivercountlist backwards
-                                                                    | false ->let backwards = true
-                                                                              comparespace t (rivercount+1) targetIndexminus fullList rivercountlist backwards
+                                                                    |true -> comparespace t (rivercount+1) targetIndexplus fullList rivercountlist backwards // space to the right
+                                                                    | false ->let backwards = true //  backwards is a bool to correct the logic of the algorithm without it there would be an infinite loop if a river that treackles backwards was found
+                                                                              comparespace t (rivercount+1) targetIndexminus fullList rivercountlist backwards // space to the left
                                              |false ->let rivercountlist = (rivercount+1)::rivercountlist
-                                                      match backwards with 
-                                                      | true -> comparespace fullList 0 (targetIndex+(rivercount+1)) fullList rivercountlist false
+                                                      match backwards with
+                                                      | true -> comparespace fullList 0 (targetIndex+(rivercount+1)) fullList rivercountlist false // go back to the original target index +1 
                                                       | false -> comparespace fullList 0 (targetIndex+1) fullList rivercountlist false
                                                       
-    
     let minLen = match longestWord 0 wordlist with
-                     | None -> -1//validation function will catch this case, -1 is just to bind during build
-                     | Some a -> a
-    let maxLen = input.Length
+                     | None -> -1 //validation function will catch this case, -1 is just to bind during build
+                     | Some a -> a //unwrap option
+    let maxLen = input.Length // maximum line length = length of string
 
-    let rec locateLongestRiver iter max riverlineList = 
-        let fully = (realsplit wordlist [] [] iter iter)
-        let rivercountlinex = comparespace fully 0 0 fully [] backwards
-        let riverlineList = (iter,rivercountlinex)::riverlineList
-        match iter >= max with
-        |true -> Some (List.rev riverlineList |> List.fold maxim (0,0))
-        |false -> locateLongestRiver (iter+1) max riverlineList
+    let rec locateLongestRiver iter max riverlineList = // this function takes in the minimum length for the string and the max and then finds the river count for each line length within the range
+        let justified = (realsplit wordlist [] [] iter iter)
+        let rivercountlinex = comparespace justified 0 0 justified [] false
+        let riverlineList = (iter,rivercountlinex)::riverlineList // add tuple to list (Line length,river length)
+        match iter >= max with // check that line length is still in range i.e not longer than the string itself
+        |true -> Some (List.rev riverlineList |> List.fold maxim (0,0)) // List is reversed so that it is from lowest line length to highest
+        |false -> locateLongestRiver (iter+1) max riverlineList // check rivers in next line length
 
     match validation with 
     | Some true -> locateLongestRiver minLen maxLen []
@@ -257,9 +251,5 @@ let rivers input =
 
 [<EntryPoint>]
 let main argv =
-    //printfn "Hello World from F#!"
-    //printfn "%A" (rivers "The Yangtze is the third longest river in Asia and the longest in the world to flow entirely in one country")
-    //printfn "%A" (rivers "When two or more rivers meet at a confluence other than the sea the resulting merged river takes the name of one of those rivers")
-    //printfn "%A" (rivers "hello world")
-    Console.ReadKey()
+    printfn "Hello World from F#!"
     0 // return an integer exit code
