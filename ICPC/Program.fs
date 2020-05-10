@@ -140,6 +140,7 @@ let rivers input =
     let wordarray = input.ToString().Split(' ')
     let wordlist = Seq.toList wordarray
     let listi = Seq.toList (input)
+    let backwards = false
 
     let onlyLetters (list:string) = 
         let charlist = Seq.toList list
@@ -181,11 +182,20 @@ let rivers input =
                       |_-> None
         |_-> None
     
-    let findLargest x = 
-        List.fold (fun accumulator x -> match x > accumulator with |true -> x |_ -> accumulator) 0
+    let findLargest accumulator x = 
+        match x > accumulator with 
+        |true -> x 
+        |_ -> accumulator
     
-    let rec realsplit (list:string list) (newlist:string list) biglist length =
-        let og = 21
+    let maxim malum valum = 
+        match malum with 
+                  |(b,a) -> match valum with
+                            | (d,c) -> match c>a with
+                                       |true -> (d,c)
+                                       |false -> (b,a)
+    
+    let rec realsplit (list:string list) (newlist:string list) biglist length ogLength =
+        let og = ogLength
         match list with
         | [] -> let hello = String.concat " " (List.rev newlist)
                 let biglist = hello::biglist(*List.iter (printfn "%s")*) 
@@ -193,48 +203,63 @@ let rivers input =
                 (List.rev biglist)
         | h::t -> match h.Length <= length  with
                   | true -> let newlist = h::newlist
-                            realsplit t newlist biglist ((length - h.Length)-1)
+                            realsplit t newlist biglist ((length - h.Length)-1) og
                   | false -> let hello = String.concat " " (List.rev newlist)
                              let biglist = hello::biglist
-                             realsplit list [] biglist og
+                             realsplit list [] biglist og og
 
-    let rec comparespace (list:string list) rivercount (startIndex:int) fullList (rivercountlist:int list) =
+    let rec comparespace (list:string list) rivercount (startIndex:int) fullList (rivercountlist:int list) backwards=
         match list with 
-        | [] -> rivercountlist |> List.fold (fun accumulator x -> match x > accumulator with |true -> x |_ -> accumulator) 0
+        | [] -> rivercountlist |> List.fold findLargest 0
         | h::t -> match h.IndexOf(' ',startIndex) with 
-                  | -1 -> comparespace t 0 0 t rivercountlist
+                  | -1 -> comparespace t 0 0 t rivercountlist backwards
                   | _ -> let targetIndex = h.IndexOf(' ',startIndex)
                          let targetIndexplus =  targetIndex+1
                          let targetIndexminus = targetIndex-1
                          match t.IsEmpty with
                          |true -> match rivercount with
-                                  | 0 ->  1::rivercountlist |> List.fold (fun accumulator x -> match x > accumulator with |true -> x |_ -> accumulator) 0
-                                  | _ ->  rivercountlist |> List.fold (fun accumulator x -> match x > accumulator with |true -> x |_ -> accumulator) 0
+                                  | 0 ->  1::rivercountlist |> List.fold findLargest 0
+                                  | _ ->  rivercountlist |> List.fold findLargest 0
                          |false -> 
                                    let checki = t.Head //
                                    match checki.Length> targetIndex+1 with
                                    | false ->let rivercountlist = (rivercount+1)::rivercountlist
-                                             comparespace t 0 0 t rivercountlist
+                                             comparespace t 0 0 t rivercountlist backwards
                                    | true -> match checki.[targetIndex] = ' ' || checki.[targetIndexplus] = ' ' || checki.[targetIndexminus] = ' ' with
                                              |true -> match checki.[targetIndex] = ' ' with
-                                                        | true -> comparespace t (rivercount+1) targetIndex fullList rivercountlist
+                                                        | true ->   comparespace t (rivercount+1) targetIndex fullList rivercountlist backwards
                                                         | false ->  match checki.[targetIndexplus] = ' ' with
-                                                                    |true ->  comparespace t (rivercount+1) targetIndexplus fullList rivercountlist
-                                                                    | false -> comparespace t (rivercount+1) targetIndexminus fullList rivercountlist
+                                                                    |true -> comparespace t (rivercount+1) targetIndexplus fullList rivercountlist backwards
+                                                                    | false ->let backwards = true
+                                                                              comparespace t (rivercount+1) targetIndexminus fullList rivercountlist backwards
                                              |false ->let rivercountlist = (rivercount+1)::rivercountlist
-                                                      comparespace fullList 0 (targetIndex+1) fullList rivercountlist
+                                                      match backwards with 
+                                                      | true -> comparespace fullList 0 (targetIndex+(rivercount+1)) fullList rivercountlist false
+                                                      | false -> comparespace fullList 0 (targetIndex+1) fullList rivercountlist false
+                                                      
     
-    
-    let fully = (realsplit wordlist [] [] 21)
-    comparespace fully 0 0 fully []
+    let minLen = match longestWord 0 wordlist with
+                     | None -> -1//validation function will catch this case, -1 is just to bind during build
+                     | Some a -> a
+    let maxLen = input.Length
 
-    //validation
+    let rec locateLongestRiver iter max riverlineList = 
+        let fully = (realsplit wordlist [] [] iter iter)
+        let rivercountlinex = comparespace fully 0 0 fully [] backwards
+        let riverlineList = (iter,rivercountlinex)::riverlineList
+        match iter >= max with
+        |true -> Some (List.rev riverlineList |> List.fold maxim (0,0))
+        |false -> locateLongestRiver (iter+1) max riverlineList
+
+    match validation with 
+    | Some true -> locateLongestRiver minLen maxLen []
+    | _ -> None
 
 [<EntryPoint>]
 let main argv =
     //printfn "Hello World from F#!"
-    //printfn "%d" (rivers "The Yangtze is the third longest river in Asia and the longest in the world to flow entirely in one country")
-    printfn "%d" (rivers "When two or more rivers meet at a confluence other than the sea the resulting merged river takes the name of one of those rivers")
-    //printfn "%d" (rivers "hello world")
+    //printfn "%A" (rivers "The Yangtze is the third longest river in Asia and the longest in the world to flow entirely in one country")
+    //printfn "%A" (rivers "When two or more rivers meet at a confluence other than the sea the resulting merged river takes the name of one of those rivers")
+    //printfn "%A" (rivers "hello world")
     Console.ReadKey()
     0 // return an integer exit code
